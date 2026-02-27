@@ -1,0 +1,128 @@
+const Clan = require('../models/Clan');
+const crApi = require('../utils/crApi');
+
+exports.getClanStats = async (req, res) => {
+    const clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
+    console.log('Buscando dados para a Tag:', clanTag);
+
+    try {
+        const apiClan = await crApi.getClan(clanTag);
+        const riverRace = await crApi.getRiverRace(clanTag);
+
+        const participantsMap = {};
+        if (riverRace.clan && riverRace.clan.participants) {
+            riverRace.clan.participants.forEach(p => {
+                participantsMap[p.tag] = p;
+            });
+        }
+
+        const members = (apiClan.memberList || []).map(m => {
+            const warInfo = participantsMap[m.tag] || { decksUsed: 0, fame: 0 };
+            return {
+                name: m.name,
+                tag: m.tag,
+                role: m.role,
+                trophies: m.trophies || 0,
+                decksUsed: warInfo.decksUsed || 0,
+                medals: warInfo.fame || 0,
+                status: warInfo.decksUsed >= 4 ? 'Concluído' : (warInfo.decksUsed > 0 ? 'Em Batalha' : 'Pendente')
+            };
+        });
+
+        const currentMembersTags = new Set((apiClan.memberList || []).map(m => m.tag));
+        const activeParticipants = (riverRace.clan?.participants || []).filter(p => currentMembersTags.has(p.tag));
+
+        res.json({
+            name: apiClan.name,
+            tag: apiClan.tag,
+            warDay: (riverRace.periodIndex || 0) + 1,
+            medals: riverRace.clan?.fame || riverRace.clan?.periodPoints || 0,
+            pendingAttacks: members.filter(m => m.decksUsed < 4).length,
+            membersParticipating: activeParticipants.length,
+            totalMembers: apiClan.members,
+            members: members,
+            fromApi: true
+        });
+
+    } catch (error) {
+        console.error('CR API Error:', error.response?.data || error.message);
+
+        const status = error.response?.status || 500;
+        let message = 'Erro na API do Clash Royale';
+
+        if (status === 403) message = 'Erro de Autenticação (Verifique IP/Chave no .env)';
+        if (status === 404) message = `Clã não encontrado (Verifique a Tag: ${clanTag})`;
+
+        res.status(status).json({
+            message,
+            error: error.response?.data?.reason || error.message,
+            members: [],
+            name: 'Clã não encontrado',
+            tag: clanTag
+        });
+    }
+};
+
+exports.getWarHistory = async (req, res) => {
+    const clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
+
+    try {
+        const warLog = await crApi.getWarLog(clanTag);
+        const aggregated = {};
+
+        const pastWars = warLog.items || [];
+        const weeksCount = pastWars.length;
+
+        const weekHeaders = pastWars.map((war) => {
+            return `${war.sectionIndex || '?'}`;
+        });
+
+        pastWars.forEach((war, weekIdx) => {
+            const clanData = war.standings?.find(s => s.clan.tag === clanTag);
+            if (clanData && clanData.clan.participants) {
+                clanData.clan.participants.forEach(p => {
+                    if (!aggregated[p.tag]) {
+                        aggregated[p.tag] = {
+                            name: p.name,
+                            tag: p.tag,
+                            role: '...',
+                            weeks: 0,
+                            total: 0,
+                            history: new Array(weeksCount).fill(0)
+                        };
+                    }
+                    aggregated[p.tag].weeks += 1;
+                    aggregated[p.tag].total += p.fame;
+                    aggregated[p.tag].history[weekIdx] = p.fame;
+                });
+            }
+        });
+
+        let historyArray = Object.values(aggregated).map(item => ({
+            rank: 0,
+            name: item.name,
+            tag: item.tag,
+            weeks: item.weeks,
+            total: item.total,
+            average: Math.round(item.total / (item.weeks || 1)),
+            history: item.history
+        }));
+
+        historyArray.sort((a, b) => b.total - a.total);
+
+        historyArray = historyArray.map((item, idx) => ({
+            ...item,
+            rank: idx + 1
+        }));
+
+        res.json({
+            weekHeaders,
+            members: historyArray
+        });
+
+    } catch (error) {
+        console.error('War History Error:', error.stack);
+        res.status(500).json({ message: 'Erro ao buscar histórico', error: error.message });
+    }
+};
+
