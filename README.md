@@ -1,102 +1,67 @@
+# 🏆 WarTracker - QG de Elite para Guerras de Clã
 
+O **WarTracker** é o centro de comando definitivo para Líderes e Colíderes de clãs no **Clash Royale**. Projetado para maximizar o desempenho na Corrida Fluvial (Guerra de Clãs 2), o sistema oferece uma visão tática em tempo real e análise histórica profunda para garantir que seu clã sempre conquiste o primeiro lugar.
 
-# WarTracker - Gestão de Guerras de Clã
+![Aesthetics Notice](https://img.shields.io/badge/Aesthetics-Premium-blueviolet?style=for-the-badge)
+![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node%20%7C%20PostgreSQL-blue?style=for-the-badge)
 
-O WarTracker é uma solução completa e definitiva criada especificamente para Líderes e Colíderes de clãs no Clash Royale. O seu objetivo é facilitar a pesada administração das Guerras de Clãs (Corrida Fluvial), permitindo monitorar a atividade diária dos membros, cobrar participações pendentes e otimizar o desempenho geral do clã para alcançar as primeiras posições.
+## ✨ Funcionalidades Principais
 
-## 🚀 Funcionalidades
+*   **📊 Monitoramento de Guerra em Tempo Real**: 
+    *   Acompanhe o uso dos 4 decks diários de cada membro.
+    *   Sincronização inteligente: Ataques pendentes exibidos apenas de **Quinta a Domingo** (ciclo oficial).
+    *   Status automáticos: `Pendente`, `Em Batalha` ou `Concluído`.
 
-* **📊 Monitorização de Ataques**: Acompanhe em tempo real quem já utilizou os seus 4 baralhos diários na Guerra e saiba exatamente quem ainda tem batalhas pendentes antes do fim do dia.
-* **👥 Gestão de Membros**: Identifique facilmente membros inativos ou que não contribuem o suficiente para a Guerra. Acompanhe a consistência de cada jogador para tomar decisões justas sobre promoções ou expulsões.
-* **📈 Dados Históricos**: Analise o histórico de ganho de medalhas e tendências de participação ao longo das semanas para entender a evolução do seu clã.
-* **🤖 Integração com Discord**: Facilite a comunicação da liderança enviando alertas e notificações diretamente no seu servidor do Discord para lembrar os membros de realizarem os seus ataques pendentes.
+*   **📈 Histórico de Guerras (Filtrado)**:
+    *   Tabela de desempenho das últimas 10 semanas.
+    *   **Filtro de Elite**: Exibe apenas os 50 membros que estão atualmente no clã, facilitando a tomada de decisão.
+    *   Cálculo automático de rankings, medalhas totais e médias semanais.
 
-## 🛠️ Tecnologias Utilizadas
+*   **⚙️ Configurações do QG**:
+    *   **Meta de Medalhas Dinâmica**: Ajuste o mínimo esperado (ex: 2400) e veja a tabela de histórico destacar em vermelho quem não atingiu o objetivo.
+    *   **Agenda de Guerra**: Visualização clara do status atual (Treino vs. Guerra).
 
-O projeto é dividido em duas partes principais, utilizando tecnologias modernas e eficientes:
+*   **📱 Responsividade & Mobilidade**:
+    *   Interface totalmente otimizada para celulares com colunas fixas para navegação em tabelas grandes.
+    *   **Gerar Relatório**: Gere um PDF limpo e formatado para impressão com um clique.
+    *   **Enviar Top 5**: Compartilhe o ranking dos melhores guerreiros diretamente no WhatsApp com formatação automática.
 
-* **Frontend (Interface do Utilizador)**:
-* **React & Vite**: Para uma interface de utilizador extremamente rápida, responsiva e de carregamento instantâneo.
-* **Tailwind CSS**: Framework de estilização para um design limpo, moderno e fácil de manter.
-* **Lucide React**: Biblioteca de ícones elegantes.
+## 🛠️ Tecnologia & Performance
 
+*   **Frontend**: 
+    *   [React](https://reactjs.org/) + [Vite](https://vitejs.dev/) para velocidade extrema.
+    *   [Tailwind CSS](https://tailwindcss.com/) com design premium e animações suaves.
+    *   [Lucide Icons](https://lucide.dev/) para uma interface intuitiva.
+*   **Backend**: 
+    *   [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/).
+    *   [PostgreSQL](https://www.postgresql.org/) para persistência de dados e histórico de longo prazo.
+    *   Integração direta com a **Supercell API**.
+*   **Segurança**: 
+    *   Autenticação via **JWT** (JSON Web Tokens).
+    *   Proteção de rotas e gestão de preferências de usuário.
 
-* **Backend (Servidor e Regras de Negócio)**:
-* **Node.js & Express**: Responsáveis por processar as requisições, comunicar-se com a API oficial do Clash Royale e gerir os dados do sistema.
-* **PostgreSQL (via pgAdmin)**: Banco de dados relacional robusto utilizado para armazenar os utilizadores, configurações e o histórico de longo prazo dos clãs (gerido através da interface do pgAdmin).
+## 📁 Estrutura do Repositório
 
+*   `frontend/`: Interface visual e lógica do cliente.
+*   `backend/`: API REST, controladores de clã, modelos de dados e utilitários da API Royale.
 
-* **Autenticação**:
-* **JWT (JSON Web Tokens)**: Sistema de login seguro para garantir que apenas pessoas autorizadas gerem os dados do clã.
+## 🚀 Como Iniciar
 
-
-
-## 📁 Estrutura do Projeto
-
-O repositório está organizado de forma clara, separando a interface gráfica da lógica do servidor:
-
-* `frontend/`: Contém todo o código visual da aplicação React.
-* `backend/`: Contém a API em Node.js, rotas, controladores, a ligação ao PostgreSQL e a lógica de autenticação.
-
-## 🚦 Como Correr o Projeto Localmente
-
-Siga os passos abaixo para descarregar e executar o WarTracker no seu próprio computador.
-
-### Pré-requisitos
-
-Certifique-se de ter os seguintes programas instalados na sua máquina:
-
-* **Node.js** (versão 18 ou superior)
-* **npm** (gestor de pacotes, geralmente já vem com o Node.js)
-* **PostgreSQL** e **pgAdmin** a correr localmente.
-
-### Instalação
-
-1. Clone (descarregue) este repositório para o seu computador.
-2. **Instale as dependências do Frontend**:
-Navegue até à pasta do frontend e instale os pacotes necessários:
-```bash
-cd frontend
-npm install
-
+### Variáveis de Ambiente (`backend/.env`)
+Crie um arquivo `.env` na pasta backend com:
+```env
+PORT=5000
+DATABASE_URL=postgres://usuario:senha@localhost:5432/nome_do_banco
+JWT_SECRET=seu_segredo_jwt
+CLASH_ROYALE_API_KEY=sua_chave_da_supercell_aqui
+CLASH_ROYALE_BASE_URL=https://api.clashroyale.com/v1
+CLAN_TAG="#SUA_TAG_AQUI"
 ```
 
+### Execução
+1. Instale as dependências: `npm install` em ambas as pastas (`frontend` e `backend`).
+2. Backend: `cd backend && npm run dev`
+3. Frontend: `cd frontend && npm run dev`
 
-3. **Instale as dependências do Backend**:
-Abra um novo terminal, navegue até à pasta do backend e instale os pacotes:
-```bash
-cd backend
-npm install
-
-```
-
-
-4. **Configuração de Variáveis de Ambiente**:
-Crie um ficheiro `.env` na pasta `backend/` com as suas credenciais (ex: chave da API oficial do Clash Royale, segredo do JWT, credenciais de ligação ao banco de dados PostgreSQL e porta do servidor).
-
-### Iniciando o Sistema
-
-Para ver o projeto a funcionar, precisará de correr o Frontend e o Backend simultaneamente em terminais separados.
-
-* **Para iniciar o Frontend**:
-Dentro da pasta `frontend/`, execute:
-```bash
-npm run dev
-
-```
-
-
-* **Para iniciar o Backend**:
-Dentro da pasta `backend/`, execute:
-```bash
-npm run dev
-
-```
-
-
-
-Após iniciar ambos, o terminal mostrará os links locais (geralmente `http://localhost:5173` para o frontend) para aceder ao sistema pelo navegador.
-
-## 📄 Aviso Legal / Licença
-
-Este projeto é uma ferramenta independente e não possui afiliação, patrocínio ou aprovação da Supercell. Os dados do jogo são utilizados sob os termos da API pública da Supercell. © 2026 WarTracker.
+---
+**Aviso Legal**: Este projeto é uma ferramenta de fã e não é afiliado à Supercell. Os ativos do jogo pertencem aos seus respectivos donos.
