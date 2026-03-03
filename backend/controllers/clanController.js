@@ -2,8 +2,10 @@ const Clan = require('../models/Clan');
 const crApi = require('../utils/crApi');
 
 exports.getClanStats = async (req, res) => {
-    const clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
+    let clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
+    clanTag = clanTag.replace(/["']/g, '');
     console.log('Buscando dados para a Tag:', clanTag);
+
 
     try {
         const apiClan = await crApi.getClan(clanTag);
@@ -32,16 +34,21 @@ exports.getClanStats = async (req, res) => {
         const currentMembersTags = new Set((apiClan.memberList || []).map(m => m.tag));
         const activeParticipants = (riverRace.clan?.participants || []).filter(p => currentMembersTags.has(p.tag));
 
+        const today = new Date();
+        const dayIdx = today.getDay(); // 0-Dom, 4-Qui, 5-Sex, 6-Sab
+        const isWarDay = dayIdx === 0 || dayIdx >= 4;
+
         res.json({
             name: apiClan.name,
             tag: apiClan.tag,
             warDay: (riverRace.periodIndex || 0) + 1,
             medals: riverRace.clan?.fame || riverRace.clan?.periodPoints || 0,
-            pendingAttacks: members.filter(m => m.decksUsed < 4).length,
+            pendingAttacks: isWarDay ? members.filter(m => m.decksUsed < 4).length : 0,
             membersParticipating: activeParticipants.length,
             totalMembers: apiClan.members,
             members: members,
-            fromApi: true
+            fromApi: true,
+            isWarDay: isWarDay
         });
 
     } catch (error) {
@@ -64,7 +71,9 @@ exports.getClanStats = async (req, res) => {
 };
 
 exports.getWarHistory = async (req, res) => {
-    const clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
+    let clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
+    clanTag = clanTag.replace(/["']/g, '');
+
 
     try {
         const warLog = await crApi.getWarLog(clanTag);
@@ -74,7 +83,7 @@ exports.getWarHistory = async (req, res) => {
         const weeksCount = pastWars.length;
 
         const weekHeaders = pastWars.map((war) => {
-            return `${war.sectionIndex || '?'}`;
+            return `S${(war.sectionIndex || 0) + 1}`;
         });
 
         pastWars.forEach((war, weekIdx) => {
@@ -98,15 +107,20 @@ exports.getWarHistory = async (req, res) => {
             }
         });
 
-        let historyArray = Object.values(aggregated).map(item => ({
-            rank: 0,
-            name: item.name,
-            tag: item.tag,
-            weeks: item.weeks,
-            total: item.total,
-            average: Math.round(item.total / (item.weeks || 1)),
-            history: item.history
-        }));
+        const apiClan = await crApi.getClan(clanTag);
+        const currentMembersTags = new Set((apiClan.memberList || []).map(m => m.tag));
+
+        let historyArray = Object.values(aggregated)
+            .filter(item => currentMembersTags.has(item.tag))
+            .map(item => ({
+                rank: 0,
+                name: item.name,
+                tag: item.tag,
+                weeks: item.weeks,
+                total: item.total,
+                average: Math.round(item.total / (item.weeks || 1)),
+                history: item.history
+            }));
 
         historyArray.sort((a, b) => b.total - a.total);
 

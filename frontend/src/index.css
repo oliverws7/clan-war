@@ -5,3 +5,62 @@
     @apply antialiased text-slate-900;
   }
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+
+  /* Ocultar elementos de navegação */
+  aside, header, button, .no-print, nav, .print-hidden {
+    display: none !important;
+  }
+
+  /* Centralizar e ajustar título */
+  h1 {
+    font-size: 18pt !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 20px 0 !important;
+    color: #000 !important;
+  }
+
+  /* Tabela de Histórico Branca para Impressão */
+  .bg-white, .bg-slate-50, .bg-slate-100 {
+    background-color: white !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 8pt !important;
+    color: black !important;
+  }
+
+  th, td {
+    border: 1px solid #ddd !important;
+    padding: 4px !important;
+    text-align: center !important;
+  }
+
+  th {
+    background-color: #f8fafc !important;
+    font-weight: bold !important;
+  }
+
+  .text-green-600, .text-red-500, .text-blue-600 {
+    color: black !important;
+    font-weight: bold !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+}

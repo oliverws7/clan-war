@@ -22,7 +22,10 @@ import {
     BellRing,
     Smartphone,
     Globe,
-    Loader2
+    Loader2,
+    Printer,
+    Share2,
+    FileText
 } from 'lucide-react';
 
 export default function Dashboard({ onNavigate }) {
@@ -34,6 +37,10 @@ export default function Dashboard({ onNavigate }) {
         localStorage.setItem('activeTab', tab);
         setSidebarOpen(false); // Common behavior for sidebar buttons
     };
+
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+
     const [profile, setProfile] = useState({
         name: 'Carregando...',
         tag: '#---',
@@ -65,10 +72,9 @@ export default function Dashboard({ onNavigate }) {
 
     const [isSaving, setIsSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [notificationsList, setNotificationsList] = useState([
-        { id: 1, text: 'Guerra iniciada! 4 decks disponíveis.', time: '2h atrás', icon: Swords, read: false },
-        { id: 2, text: 'NoobMaster69 ainda não atacou.', time: '3h atrás', icon: Info, read: false },
-    ]);
+    const [notificationsList, setNotificationsList] = useState([]);
+    const [minMedalsTarget, setMinMedalsTarget] = useState(2400); // Meta de medalhas
+    const [activeWarDays, setActiveWarDays] = useState("Quinta a Domingo");
 
     const handleMarkAllAsRead = () => {
         setNotificationsList(prev => prev.map(n => ({ ...n, read: true })));
@@ -117,27 +123,39 @@ export default function Dashboard({ onNavigate }) {
                 const clanData = await clanRes.json();
 
                 if (clanRes.ok) {
+                    const isWarDay = clanData.isWarDay;
                     setClanStats({
                         name: clanData.name,
                         tag: clanData.tag,
                         warDay: clanData.warDay || '?',
                         medals: clanData.medals.toLocaleString(),
-                        pendingAttacks: `${clanData.pendingAttacks}`,
+                        pendingAttacks: isWarDay ? `${clanData.pendingAttacks}` : 'OFF',
                         membersParticipating: `${clanData.membersParticipating}/${clanData.totalMembers || 50}`,
-                        totalMembers: clanData.totalMembers
+                        totalMembers: clanData.totalMembers,
+                        isWarDay: isWarDay
                     });
 
                     if (clanData.members) {
-                        setClanMembers(clanData.members.map((m) => ({
-                            id: m.tag,
-                            name: m.name,
-                            role: translateRole(m.role),
-                            trophies: m.trophies || 0,
-                            decksUsed: `${m.decksUsed}/4`,
-                            medals: m.medals,
-                            status: m.status,
-                            score: m.status === 'Concluído' ? 'bg-green-100 text-green-700' : (m.status === 'Em Batalha' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')
-                        })));
+                        setClanMembers(clanData.members.map((m) => {
+                            const status = isWarDay ? m.status : 'Treino';
+                            let scoreClass = 'bg-slate-100 text-slate-500'; // Default Neutral
+
+                            if (isWarDay) {
+                                scoreClass = m.status === 'Concluído' ? 'bg-green-100 text-green-700' :
+                                    (m.status === 'Em Batalha' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
+                            }
+
+                            return {
+                                id: m.tag,
+                                name: m.name,
+                                role: translateRole(m.role),
+                                trophies: m.trophies || 0,
+                                decksUsed: `${m.decksUsed}/4`,
+                                medals: m.medals,
+                                status: status,
+                                score: scoreClass
+                            };
+                        }));
                     }
                 } else {
                     setClanStats({
@@ -154,6 +172,39 @@ export default function Dashboard({ onNavigate }) {
                 if (historyRes.ok) {
                     setWarHistory(await historyRes.json());
                 }
+
+                // Lógica de Notificações Baseada no Dia
+                const today = new Date();
+                const dayIdx = today.getDay(); // 0-Sun, 4-Thu
+                const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+                const isWarDay = dayIdx === 0 || dayIdx >= 4;
+
+                const newNotifs = [];
+                if (isWarDay) {
+                    newNotifs.push({
+                        id: 101,
+                        text: `Guerra em andamento! Hoje é ${dayNames[dayIdx]}.`,
+                        time: 'Status: ATIVO',
+                        icon: Swords,
+                        read: false
+                    });
+                    newNotifs.push({
+                        id: 102,
+                        text: 'Lembre-se: use todos os 4 decks diários!',
+                        time: 'Prioridade Alta',
+                        icon: BellRing,
+                        read: false
+                    });
+                } else {
+                    newNotifs.push({
+                        id: 103,
+                        text: `Próxima guerra começa na Quinta-feira. Hoje é ${dayNames[dayIdx]}.`,
+                        time: 'Status: TREINO',
+                        icon: Info,
+                        read: false
+                    });
+                }
+                setNotificationsList(newNotifs);
 
             } catch (err) {
                 console.error("Erro ao conectar com o backend:", err);
@@ -198,6 +249,23 @@ export default function Dashboard({ onNavigate }) {
         } catch (err) {
             console.error("Erro ao salvar preferências:", err);
         }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleShare = () => {
+        const topMembers = warHistory.members.slice(0, 5).map((m, i) =>
+            `${i + 1}. ${m.name} - Média: ${m.average}`
+        ).join('\n');
+
+        const text = `🏆 *QG ${clanStats.name} - TOP 5 GUERREIROS*\n\n` +
+            `Acompanhe o desempenho do clã:\n\n${topMembers}\n\n` +
+            `Confira o QG completo em: ${window.location.origin}`;
+
+        navigator.clipboard.writeText(text);
+        alert("Resumo do Top 5 copiado para a área de transferência! Prontinho para enviar no WhatsApp.");
     };
 
     const stats = [
@@ -701,23 +769,34 @@ export default function Dashboard({ onNavigate }) {
                             <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
                                 <div className="flex justify-between items-center">
                                     <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Histórico de Guerras</h1>
-                                    <div className="bg-slate-100 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-slate-500 border border-slate-200">
-                                        Monitorando {warHistory.weekHeaders?.length || 0} semanas
+                                    <div className="flex gap-2 no-print">
+                                        <button
+                                            onClick={handleShare}
+                                            className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl text-xs font-black uppercase text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
+                                        >
+                                            <Share2 className="h-4 w-4" /> Enviar Top 5
+                                        </button>
+                                        <button
+                                            onClick={handlePrint}
+                                            className="flex items-center gap-2 bg-blue-600 px-4 py-2 rounded-xl text-xs font-black uppercase text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+                                        >
+                                            <Printer className="h-4 w-4" /> Gerar Relatório
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-[11px] font-medium text-slate-600 border-collapse">
-                                            <thead className="bg-slate-800 text-white uppercase text-[9px] font-black tracking-widest sticky top-0">
+                                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden print:border-none">
+                                    <div className="overflow-x-auto print:overflow-visible no-scrollbar">
+                                        <table className="w-full text-left text-[11px] font-medium text-slate-600 border-collapse print:table">
+                                            <thead className="bg-slate-800 text-white uppercase text-[9px] font-black tracking-widest sticky top-0 z-20">
                                                 <tr>
-                                                    <th className="px-3 py-4 text-center bg-slate-900">Nº</th>
-                                                    <th className="px-4 py-4 min-w-[140px]">Jogador</th>
+                                                    <th className="px-3 py-4 text-center bg-slate-900 sticky left-0 z-30">Nº</th>
+                                                    <th className="px-4 py-4 min-w-[140px] bg-slate-800 sticky left-[36px] z-30 border-r border-slate-700">Jogador</th>
                                                     <th className="px-3 py-4 text-center">Semanas</th>
                                                     <th className="px-3 py-4 text-center">Total</th>
                                                     <th className="px-3 py-4 text-center">Média</th>
                                                     {warHistory.weekHeaders.map((week, idx) => (
-                                                        <th key={idx} className="px-2 py-4 text-center border-l border-slate-700 bg-slate-800/50">{week}</th>
+                                                        <th key={idx} className="px-2 py-4 text-center border-l border-slate-700 bg-slate-800/50 min-w-[60px]">{week}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
@@ -737,14 +816,14 @@ export default function Dashboard({ onNavigate }) {
 
                                                             return (
                                                                 <tr key={member.tag} className={`group hover:bg-blue-50/80 transition-colors ${rankColor}`}>
-                                                                    <td className="px-1 py-3 text-center">
+                                                                    <td className={`px-1 py-3 text-center sticky left-0 z-10 ${rankColor}`}>
                                                                         <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg font-black text-[10px] shadow-sm ${numColor}`}>
                                                                             {member.rank < 10 ? `0${member.rank}` : member.rank}
                                                                         </span>
                                                                     </td>
-                                                                    <td className="px-4 py-3">
+                                                                    <td className={`px-4 py-3 sticky left-[36px] z-10 border-r border-slate-100 ${rankColor}`}>
                                                                         <div>
-                                                                            <p className="font-black text-slate-900 group-hover:text-blue-600 transition-colors">{member.name}</p>
+                                                                            <p className="font-black text-slate-900 group-hover:text-blue-600 transition-colors whitespace-nowrap">{member.name}</p>
                                                                             <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">{role}</p>
                                                                         </div>
                                                                     </td>
@@ -762,7 +841,7 @@ export default function Dashboard({ onNavigate }) {
                                                                         </div>
                                                                     </td>
                                                                     {member.history.map((fame, fIdx) => (
-                                                                        <td key={fIdx} className={`px-2 py-3 text-center border-l border-slate-50 font-bold ${fame >= 2800 ? 'text-green-600' : (fame === 0 ? 'text-slate-300' : 'text-slate-500')}`}>
+                                                                        <td key={fIdx} className={`px-2 py-3 text-center border-l border-slate-50 font-bold ${fame >= minMedalsTarget ? 'text-green-600' : (fame > 0 ? 'text-red-500' : 'text-slate-300')}`}>
                                                                             {fame > 0 ? fame.toLocaleString() : '-'}
                                                                         </td>
                                                                     ))}
@@ -785,11 +864,103 @@ export default function Dashboard({ onNavigate }) {
                         )}
 
                         {activeTab === 'configs' && (
-                            <div className="animate-in slide-in-from-bottom-4 duration-500">
-                                <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-6">Configurações do Clã</h1>
-                                <div className="bg-white p-12 rounded-3xl border-4 border-dashed border-slate-200 text-center">
-                                    <ShieldAlert className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                                    <p className="text-slate-500 font-bold uppercase tracking-widest">Ajustes da API da Supercell</p>
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+                                        <Settings className="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Configurações do QG</h1>
+                                        <p className="text-slate-500 font-medium">Controle as regras e monitoramento do clã</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Card: Monitoramento do Clã */}
+                                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 space-y-6">
+                                        <div className="flex items-center gap-3 text-blue-600 mb-4">
+                                            <ShieldAlert className="h-6 w-6" />
+                                            <h3 className="font-black uppercase tracking-tight text-lg text-slate-900">Monitoramento</h3>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Tag do Clã Primário</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={clanStats.tag}
+                                                        disabled
+                                                        className="w-full px-4 py-3 bg-slate-100 border-2 border-slate-100 rounded-xl font-bold text-slate-500 cursor-not-allowed uppercase"
+                                                    />
+                                                    <button className="px-4 py-2 bg-slate-100 text-slate-400 font-black rounded-xl hover:bg-slate-200 transition-colors" disabled>
+                                                        EDITAR
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Meta de Medalhas (Mínimo)</label>
+                                                <div className="flex items-center gap-4">
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="3600"
+                                                        step="100"
+                                                        value={minMedalsTarget}
+                                                        onChange={(e) => setMinMedalsTarget(parseInt(e.target.value))}
+                                                        className="flex-1 accent-blue-600"
+                                                    />
+                                                    <span className="font-black text-blue-600 text-xl w-16 text-center">{minMedalsTarget}</span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase italic">Abaixo disso, o histórico ficará vermelho</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Card: Dias de Guerra */}
+                                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 space-y-6">
+                                        <div className="flex items-center gap-3 text-amber-600 mb-4">
+                                            <Swords className="h-6 w-6" />
+                                            <h3 className="font-black uppercase tracking-tight text-lg text-slate-900">Agenda de Guerra</h3>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between">
+                                                <span className="font-bold text-amber-900">Status de Hoje</span>
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${new Date().getDay() === 0 || new Date().getDay() >= 4 ? 'bg-amber-400 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                                    {new Date().getDay() === 0 || new Date().getDay() >= 4 ? 'EM GUERRA' : 'DESCANSO'}
+                                                </span>
+                                            </div>
+
+                                            <div className="bg-slate-50 p-6 rounded-2xl space-y-3">
+                                                <div className="flex justify-between items-center text-xs font-bold">
+                                                    <span className="text-slate-500 uppercase">Período Ativo</span>
+                                                    <span className="text-slate-900">{activeWarDays}</span>
+                                                </div>
+                                                <div className="grid grid-cols-7 gap-1">
+                                                    {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => (
+                                                        <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${i === 0 || i >= 4 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                                                            {d}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
+                                    <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-6">
+                                        <div>
+                                            <h3 className="text-2xl font-black uppercase mb-2">Relatórios de Inatividade</h3>
+                                            <p className="text-slate-400 font-medium max-w-md">Envie automaticamente mensagens para quem não atacou nas últimas 24h.</p>
+                                        </div>
+                                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 whitespace-nowrap">
+                                            Configurar Bot
+                                        </button>
+                                    </div>
+                                    <Crown className="absolute -right-8 -bottom-8 h-48 w-48 text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
                                 </div>
                             </div>
                         )}

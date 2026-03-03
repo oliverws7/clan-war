@@ -34,7 +34,7 @@ exports.getRiverRace = async (clanTag) => {
 
 exports.getWarLog = async (clanTag) => {
     try {
-        const response = await crApi.get(`/clans/${encodeTag(clanTag)}/warlog?limit=10`);
+        const response = await crApi.get(`/clans/${encodeTag(clanTag)}/riverracelog?limit=10`);
         return response.data;
     } catch (error) {
         console.error('Error fetching war log from CR API:', error.response?.data || error.message);
