@@ -28,6 +28,8 @@ import {
     FileText
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function Dashboard({ onNavigate }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState(localStorage.getItem('activeTab') || 'guerra');
@@ -112,14 +114,14 @@ export default function Dashboard({ onNavigate }) {
             const headers = { 'Authorization': `Bearer ${token}` };
 
             try {
-                const profileRes = await fetch('http://localhost:5000/api/user/profile', { headers });
+                const profileRes = await fetch(API_URL + '/api/user/profile', { headers });
                 if (profileRes.ok) setProfile(await profileRes.json());
                 else if (profileRes.status === 401) onNavigate('login');
 
-                const prefsRes = await fetch('http://localhost:5000/api/user/preferences', { headers });
+                const prefsRes = await fetch(API_URL + '/api/user/preferences', { headers });
                 if (prefsRes.ok) setPrefs(await prefsRes.json());
 
-                const clanRes = await fetch('http://localhost:5000/api/clan/stats');
+                const clanRes = await fetch(API_URL + '/api/clan/stats');
                 const clanData = await clanRes.json();
 
                 if (clanRes.ok) {
@@ -168,7 +170,7 @@ export default function Dashboard({ onNavigate }) {
                     });
                 }
 
-                const historyRes = await fetch('http://localhost:5000/api/clan/history');
+                const historyRes = await fetch(API_URL + '/api/clan/history');
                 if (historyRes.ok) {
                     setWarHistory(await historyRes.json());
                 }
@@ -217,7 +219,7 @@ export default function Dashboard({ onNavigate }) {
         setIsSaving(true);
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch('http://localhost:5000/api/user/profile', {
+            const res = await fetch(API_URL + '/api/user/profile', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -238,7 +240,7 @@ export default function Dashboard({ onNavigate }) {
         setPrefs(newPrefs);
         const token = localStorage.getItem('token');
         try {
-            await fetch('http://localhost:5000/api/user/preferences', {
+            await fetch(API_URL + '/api/user/preferences', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

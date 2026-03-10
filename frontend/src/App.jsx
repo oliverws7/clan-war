@@ -7,7 +7,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState('loading');
 
   useEffect(() => {
-    // Check if user is already logged in
+   
     const token = localStorage.getItem('token');
     if (token) {
       setCurrentView('dashboard');

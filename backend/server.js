@@ -14,7 +14,9 @@ sequelize.authenticate()
     .then(() => console.log('Database synced'))
     .catch(err => console.error('Could not connect to PostgreSQL', err));
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'https://brootherwood.com.br', 'http://brootherwood.com.br', 'https://www.brootherwood.com.br']
+}));
 app.use(express.json());
 
 app.use('/api/auth', require('./routes/auth'));
